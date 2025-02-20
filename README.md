@@ -73,6 +73,9 @@ Paygrid provides a secure multi-level authorization mechanism for token approval
 ### Main Methods
 ```typescript
 // Initiate payment intent
+initiatePaymentIntent(intent: PaymentIntent): Promise<PaymentResponse>
+
+// Sign and initiate payment intent
 signAndInitiatePaymentIntent(intent: PaymentIntent, signer: Signer): Promise<PaymentResponse>
 
 // Get payment intent status
