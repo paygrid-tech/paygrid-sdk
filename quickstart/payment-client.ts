@@ -33,7 +33,7 @@ async function main() {
     // Create a sample payment intent
     const paymentIntent: PaymentIntent = {
       payment_type: PaymentType.ONE_TIME,
-      routing_priority: RoutingPriority.AUTO,
+      routing_priority: RoutingPriority.COST,
       operator_data: {
         id: ethers.utils.id('0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4'),
         operator: '0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4',
@@ -41,18 +41,18 @@ async function main() {
         authorized_delegates: [
           '0xF34c65196F4fC4E3dE7133eec7C13859e741875C'
         ],
-        fee_bps: 20, // 0.3% fee
+        fee_bps: 10, // 0.3% fee
         webhook_url: 'https://grid.network/well-known/operators/1'
       },
-      amount: 100, // $1.00 in cents
+      amount: 110, // $1.10 in cents
       source: {
         from_account: signer.address,
-        network_id: 'BASE',
+        network_id: 'POLYGON',
         payment_token: 'USDC'
       },
       destination: {
         to_account: '0xF34c65196F4fC4E3dE7133eec7C13859e741875C',
-        network_id: 'BASE',
+        network_id: 'OPTIMISM',
         payment_token: 'USDC'
       },
       processing_fees: {

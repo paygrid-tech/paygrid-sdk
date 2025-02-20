@@ -81,6 +81,7 @@ export class PaymentIntentClient {
   private formatPaymentIntentForSubmission(paymentIntent: PaymentIntent): any {
     return {
       payment_type: paymentIntent.payment_type.toLowerCase(),
+      routing_priority: paymentIntent.routing_priority,
       operator_data: {
         id: paymentIntent.operator_data.id,
         operator: paymentIntent.operator_data.operator,
