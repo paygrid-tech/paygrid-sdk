@@ -25,3 +25,9 @@ coverage/
 
 # OS
 .DS_Store
+
+# NPM
+.npmrc
+
+# TAR
+*.tgz
