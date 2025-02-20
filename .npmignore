@@ -1,0 +1,23 @@
+# Source
+src/
+test/
+quickstart/
+
+# Config files
+.env*
+tsconfig.json
+.eslintrc
+.prettierrc
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build process
+coverage/
+.nyc_output/ 
