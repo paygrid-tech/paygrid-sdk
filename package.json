@@ -1,24 +1,30 @@
 {
-  "name": "@paygrid/network",
-  "version": "0.1.0",
-  "description": "Official Paygrid SDK. For more info visit: https://paygrid.network",
+  "name": "@paygrid-network/sdk",
+  "version": "0.1.0-beta.1",
+  "description": "Official Paygrid Network TypeScript/JavaScript SDK - Chain-Agnostic Payment Clearing Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc",
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
     "test": "mocha -r ts-node/register/transpile-only 'test/**/*.test.ts'",
     "test:watch": "mocha -r ts-node/register/transpile-only 'test/**/*.test.ts' --watch --watch-files src/**/*.ts,test/**/*.ts",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
+    "prepublishOnly": "npm run test && npm run build",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
     "pg:sign-payment-intent": "ts-node quickstart/sign-payment-intent.ts",
     "pg:payment-client": "ts-node quickstart/payment-client.ts",
-    "demo": "npm run pg:sign-payment-intent && echo '\n=================\n' && npm run pg:payment-client"
+    "demo": "npm run pg:sign-payment-intent && echo '\n=================\n' && npm run pg:payment-client",
+    "demo:watch": "nodemon --exec 'npm run demo'"
   },
   "keywords": [
     "blockchain",
@@ -31,8 +37,15 @@
     "paygrid-sdk",
     "paygrid-sdk-js"
   ],
-  "author": "Paygrid",
-  "license": "Apache-2.0",
+  "author": "m0ughite <moughite@paygrid.co>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paygrid-tech/paygrid-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/paygrid-tech/paygrid-sdk/issues"
+  },
+  "homepage": "https://docs.paygrid.network",
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/mocha": "^10.0.1",
