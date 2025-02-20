@@ -29,5 +29,6 @@ coverage/
 # NPM
 .npmrc
 
-# TAR
+# TAR files
 *.tgz
+
