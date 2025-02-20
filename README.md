@@ -16,7 +16,7 @@ Paygrid Network is a chain-abstracted, application-specific clearing layer desig
 ## Installation
 
 ```bash
-npm install @paygrid/network
+npm install @paygrid-network/sdk
 ```
 
 ## Quick Start
@@ -26,7 +26,7 @@ See [.env.example](./.env.example) for more details.
 
 2. Initialize SDK:
 ```typescript
-import { Paygrid } from '@paygrid/network';
+import { Paygrid } from '@paygrid-network/sdk';
 
 const paygrid = new Paygrid({
   environment: 'mainnet', // or 'testnet'
@@ -96,11 +96,16 @@ interface SDKConfig {
 }
 ```
 
-## Resources
+### Resources
 
 - [API Documentation](https://docs.paygrid.network/technical-docs/paygrid-api)
 - [Technical Docs](https://docs.paygrid.network/technical-docs)
 - [Support](https://docs.paygrid.network/getting-started/reach-out)
+- [Website](https://paygrid.network)
+
+### Socials:
+- [👾 Discord Community](https://discord.gg/KcTk7cTBQp)
+- [🐦 Twitter (X)](https://x.com/paygridx)
 
 ## License
 
