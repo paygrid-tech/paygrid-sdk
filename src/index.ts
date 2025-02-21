@@ -2,15 +2,29 @@ import { PaymentIntentClient } from './services/payment.service';
 import { PaymentIntentSigner } from './services/payment-signer.service';
 import { ConfigUtils } from './utils/config';
 import { isSignTypedDataSupported } from './utils/eip712-support';
-import { PaymentIntent, Authorization, PaymentIntentResponse } from './core/types';
+import { PaymentIntent, Authorization, PaymentIntentResponse, PaymentType, ChargeBearer, RoutingPriority, OperatorData } from './core/types';
 import { ethers } from 'ethers';
 import { SDKConfig } from './core/types/config';
 import { EIP712Domain, EIP712Types, EIP712Values } from './core/types';
-// Export types
+
+// Export all types
+export { 
+    PaymentIntent, 
+    Authorization, 
+    PaymentIntentResponse,
+    PaymentType,
+    OperatorData,
+    ChargeBearer,
+    RoutingPriority,
+    SDKConfig,
+    EIP712Domain,
+    EIP712Types,
+    EIP712Values,
+};
+  
+// Export types and constants
 export * from './core/types';
-export * from './core/constants/config';
-export * from './core/constants/networks';
-export * from './core/constants/tokens';
+export * from './core/constants';
 
 /**
  * Paygrid SDK class
