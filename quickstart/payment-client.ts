@@ -1,13 +1,13 @@
 import { ethers } from 'ethers';
 import { 
   Paygrid,
+  SDKConfig,
   ChargeBearer, 
   PaymentIntent, 
   PaymentType, 
   RoutingPriority,
 } from '@paygrid-network/sdk';
 import dotenv from 'dotenv';
-// import { SDKConfig } from '@paygrid-network/sdk/dist/core/types/config';
   
 dotenv.config();
 
