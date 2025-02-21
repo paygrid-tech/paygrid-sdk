@@ -1,24 +1,26 @@
 import { ethers } from 'ethers';
 import { 
+  Paygrid,
   ChargeBearer, 
   PaymentIntent, 
   PaymentType, 
   RoutingPriority,
-} from '../src/core/types';
-import { PaymentIntentClient } from '../src/services/payment.service';
+} from '@paygrid-network/sdk';
 import dotenv from 'dotenv';
-
+// import { SDKConfig } from '@paygrid-network/sdk/dist/core/types/config';
+  
 dotenv.config();
 
 async function main() {
   try {
     // Initialize SDK configuration - Optional
     // const sdkConfig: SDKConfig = {
-    //   apiKey: process.env.PAYGRID_API_KEY
+    //   apiKey: process.env.PAYGRID_API_KEY,
+    //   environment: 'MAINNET'
     // };
 
     // Initialize payment service
-    const paymentIntentClient = new PaymentIntentClient();
+    const paymentIntentClient = new Paygrid();
 
     // Initialize a wallet (in production, you'd trigger the sender's wallet signer)
     const privateKey = process.env.TEST_PRIVATE_KEY;
@@ -44,15 +46,15 @@ async function main() {
         fee_bps: 10, // 0.3% fee
         webhook_url: 'https://grid.network/well-known/operators/1'
       },
-      amount: 110, // $1.10 in cents
+      amount: 120, // $1.20 in cents
       source: {
         from_account: signer.address,
-        network_id: 'POLYGON',
+        network_id: 'BASE',
         payment_token: 'USDC'
       },
       destination: {
         to_account: '0xF34c65196F4fC4E3dE7133eec7C13859e741875C',
-        network_id: 'OPTIMISM',
+        network_id: 'POLYGON',
         payment_token: 'USDC'
       },
       processing_fees: {
