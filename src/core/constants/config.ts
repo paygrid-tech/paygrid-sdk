@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 
 // API and Service Configuration
 export const PAYGRID_API = {
-  BASE_URL: 'https://0109-2a02-a459-693c-0-ed84-cb15-a452-ac9e.ngrok-free.app', //'https://api.paygrid.co',
+  BASE_URL: 'https://api.paygrid.co',
   VERSION: 'v1',
   ENDPOINTS: {
     PAYMENTS: '/payments',
