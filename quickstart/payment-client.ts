@@ -49,24 +49,23 @@ async function main() {
       amount: 120, // $1.20 in cents
       source: {
         from_account: signer.address,
-        network_id: 'BASE',
+        network_id: 'POLYGON',
         payment_token: 'USDC'
       },
       destination: {
         to_account: '0xF34c65196F4fC4E3dE7133eec7C13859e741875C',
-        network_id: 'POLYGON',
+        network_id: 'BASE',
         payment_token: 'USDC'
       },
       processing_fees: {
         // Payer pays for the corridor fees
         charge_bearer: ChargeBearer.PAYER,
         // corridor fees are automatically calculated by the Paygrid SDK
-        corridor_fees: '0.00'
       },
       payment_reference: '017e0e752d7dc551cc3bb605a2e25f8162d0cc6c2f905706deea543336f1409be5',
       metadata: {
-        key: 'value',
-        key2: 'value2'
+        key: 'true',
+        key2: 'false'
       },
       authorizations: {
         permit2_permit: {
