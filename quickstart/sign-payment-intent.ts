@@ -1,9 +1,16 @@
 import { ethers } from 'ethers';
-import { ChargeBearer, PaymentIntent, PaymentType, RoutingPriority } from '../src/core/types';
 import dotenv from 'dotenv';
-import { PaymentIntentSigner } from '../src/services/payment-signer.service';
+import { 
+  Paygrid,
+  ChargeBearer, 
+  PaymentIntent, 
+  PaymentType, 
+  RoutingPriority 
+} from '@paygrid-network/sdk';
 
 dotenv.config();
+
+const paygrid = new Paygrid();
 
 async function main() {
   try {
@@ -22,11 +29,11 @@ async function main() {
       payment_type: PaymentType.ONE_TIME,
       routing_priority: RoutingPriority.AUTO,
       operator_data: {
-        id: ethers.utils.id('0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4'),
-        operator: '0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4',
-        treasury: '0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4',
+        id: ethers.utils.id('0x0AB735a1e05C75E0c119D496b0Db4333EF2fFaC8'),
+        operator: '0x0AB735a1e05C75E0c119D496b0Db4333EF2fFaC8',
+        treasury: '0x0AB735a1e05C75E0c119D496b0Db4333EF2fFaC8',
         authorized_delegates: [
-          '0xF34c65196F4fC4E3dE7133eec7C13859e741875C'
+          '0xE7133eec7C13859e74F34c65196F4fC4E3d1875C'
         ],
         fee_bps: 30, // 0.3% fee
         // replace with actual webhook url
@@ -71,7 +78,7 @@ async function main() {
     console.log(JSON.stringify(paymentIntent, bigIntReplacer, 2));
 
     // Get the payment intent authorization payload
-    const payload = PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent);
+    const payload = paygrid.constructPaymentAuthorizationPayload(paymentIntent);
     
     console.log('\n2. Generated Payload:');
     console.log(JSON.stringify({
@@ -81,7 +88,7 @@ async function main() {
     }, bigIntReplacer, 2));
 
     // Sign the payment intent
-    const authorization = await PaymentIntentSigner.signPaymentIntent(paymentIntent, signer);
+    const authorization = await paygrid.signPaymentIntent(paymentIntent, signer);
     
     console.log('\n3. Generated Authorization:');
     console.log(JSON.stringify({

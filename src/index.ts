@@ -12,6 +12,7 @@ export {
     PaymentIntent, 
     Authorization, 
     PaymentIntentResponse,
+    PaymentIntentSigner,
     PaymentType,
     OperatorData,
     ChargeBearer,
@@ -69,7 +70,7 @@ export class Paygrid {
   /**
    * Static utility to sign a payment intent without submitting
    */
-  static async signPaymentIntent(
+  async signPaymentIntent(
     paymentIntent: PaymentIntent,
     signer: ethers.Signer
   ): Promise<Authorization> {
@@ -79,7 +80,7 @@ export class Paygrid {
   /**
    * Static utility to construct EIP-712 payload for manual signing
    */
-  static constructPaymentAuthorizationPayload(
+  constructPaymentAuthorizationPayload(
     paymentIntent: PaymentIntent
   ): { domain: EIP712Domain; types: EIP712Types; values: EIP712Values } {
     return PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent);
