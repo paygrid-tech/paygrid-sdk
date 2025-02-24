@@ -37,6 +37,12 @@ export interface PaygridAPIConfig {
   headers: Record<string, string>;
 }
 
+export interface PaygridAPIError extends Error {
+    status: number;
+    data?: any;
+    config?: any;
+  }
+
 export interface PermitConfig {
   type: PermitType;
   version: string;

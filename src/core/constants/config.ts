@@ -37,9 +37,9 @@ export const PERMIT2_CONFIG = {
 // SDK Configuration
 export const SDK_CONFIG = {
   VERSION: '0.1.0',
-  DEFAULT_TIMEOUT: 30000, // 30 seconds
-  POLL_INTERVAL: 3000, // 3 seconds
-  MAX_RETRIES: 39, // 30 minutes
+  DEFAULT_TIMEOUT: 180000, // 3 minutes
+  POLL_INTERVAL: 2000, // 2 seconds
+  MAX_RETRIES: 600, // 30 minutes (2 second intervals)
   ENVIRONMENTS: {
     MAINNET: 'mainnet',
     TESTNET: 'testnet',
