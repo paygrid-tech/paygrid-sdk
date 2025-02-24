@@ -39,6 +39,11 @@ export class Paygrid {
     this.paymentIntentClient = new PaymentIntentClient(config);
   }
 
+  /** Initiate a payment intent */
+  async initiatePaymentIntent(paymentIntent: PaymentIntent): Promise<PaymentIntentResponse> {
+    return this.paymentIntentClient.initiatePaymentIntent(paymentIntent);
+  }
+
   /**
    * Signs and submits a payment intent
    */

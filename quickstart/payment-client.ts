@@ -44,9 +44,9 @@ async function main() {
           '0xF34c65196F4fC4E3dE7133eec7C13859e741875C'
         ],
         fee_bps: 10, // 0.3% fee
-        webhook_url: 'https://grid.network/well-known/operators/1'
+        webhook_url: 'https://example.com/webhook'
       },
-      amount: 120, // $1.20 in cents
+      amount: 100, // $1.00 in cents
       source: {
         from_account: signer.address,
         network_id: 'POLYGON',
@@ -77,18 +77,27 @@ async function main() {
       expiration_date: deadline // valid for 1 hour
     };
 
-    console.log('\n1. Signing and Initiating Payment Intent:');
+    // Step 1: Signing and Initiating Payment Intent
+    console.log('\n1. Signing and Initiating Payment Intent');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
     const paymentIntentResponse = await paymentIntentClient.signAndInitiatePaymentIntent(
       paymentIntent,
       signer
     );
-    console.log(JSON.stringify({
+
+    console.log('\n✓ Payment Intent Created');
+    console.log({
       payment_intent_id: paymentIntentResponse.id,
       status: paymentIntentResponse.status,
-      blockchain_metadata: paymentIntentResponse.blockchain_metadata
-    }, bigIntReplacer, 2));
+      amount: `$${(paymentIntent.amount / 100).toFixed(2)} ${paymentIntent.source.payment_token}`,
+      source: `${paymentIntent.source.network_id}/${paymentIntent.source.payment_token}`,
+      destination: `${paymentIntent.destination.network_id}/${paymentIntent.destination.payment_token}`,
+      processing_date: paymentIntentResponse.processing_date,
+    });
 
-    console.log('\n2. Retrieving Payment Intent by ID:');
+    console.log('\n2. Fetching Payment Intent by ID:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     const retrievedPayment = await paymentIntentClient.getPaymentIntentById(paymentIntentResponse.id);
     console.log(JSON.stringify({
       status: retrievedPayment.status,
@@ -96,11 +105,13 @@ async function main() {
       blockchain_metadata: retrievedPayment.blockchain_metadata
     }, bigIntReplacer, 2));
 
-    console.log('\n3. Polling Payment Status:');
+    console.log('\n3. Payment Status Tracking:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Waiting for payment to complete...');
     
     // Create abort controller for timeout
     const controller = new AbortController();
+    let lastStatus = '';
     
     try {
       const finalPayment = await paymentIntentClient.pollPaymentIntentStatus(
@@ -113,15 +124,43 @@ async function main() {
         // }
       );
 
+      // Track intermediate states by polling separately
+      const pollInterval = setInterval(async () => {
+        try {
+          const currentState = await paymentIntentClient.getPaymentIntentById(paymentIntentResponse.id);
+          if (currentState.status !== lastStatus) {
+            const timestamp = new Date().toISOString();
+            console.log(`\n[${timestamp}] Status Update: ${currentState.status}`);
+            
+            if (currentState.blockchain_metadata?.transaction) {
+              const tx = currentState.blockchain_metadata.transaction;
+              if (tx.src_tx_hash) console.log(`Source TX: ${tx.src_tx_hash}`);
+              if (tx.dst_tx_hash) console.log(`Destination TX: ${tx.dst_tx_hash}`);
+              if (tx.error) console.log(`Error: ${tx.error}`);
+            }
+            
+            lastStatus = currentState.status;
+          }
+        } catch (error) {
+          // Silently handle polling errors
+        }
+      }, 3000);
+
+      // Clear interval when payment completes
+      clearInterval(pollInterval);
+
       console.log('\nFinal Payment Status:', JSON.stringify({
+        payment_intent_id: finalPayment.id,
         status: finalPayment.status,
         blockchain_metadata: finalPayment.blockchain_metadata,
         processing_fees: finalPayment.processing_fees
       }, bigIntReplacer, 2));
 
+      console.log('\n✅ Payment Completed');
+
     } catch (error) {
       if (error instanceof Error) {
-        console.error('\nPolling Error:', error.message);
+        console.error('\n✗ Polling Error:', error.message);
         
         // Get final state even if polling failed
         const finalState = await paymentIntentClient.getPaymentIntentById(paymentIntentResponse.id);

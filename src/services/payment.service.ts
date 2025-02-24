@@ -3,12 +3,18 @@ import { ethers } from 'ethers';
 import { PaymentIntentSigner } from './payment-signer.service';
 import { ConfigUtils } from '../utils/config';
 import { PAYGRID_API, SDK_CONFIG } from '../core/constants/config';
-import { SDKConfig } from '../core/types/config';
+import { SDKConfig, PaygridAPIError } from '../core/types/config';
 import { 
   PaymentIntent,
   PaymentIntentResponse,
   Authorization,
-  PaymentStatus
+  PaymentStatus,
+  PaymentType,
+  RoutingPriority,
+  NetworkKey,
+  TokenSymbol,
+  GridPaymentType,
+  ChargeBearer
 } from '../core/types';
 import { FINAL_PAYMENT_STATES } from '../core/types/index';
 
@@ -37,15 +43,39 @@ export class PaymentIntentClient {
     this.axios.interceptors.response.use(
       response => response,
       (error: AxiosError) => {
+        const paygridError: PaygridAPIError = new Error() as PaygridAPIError;
+        
         if (error.response) {
-          const errorData = error.response.data as { message?: string };
-          const message = errorData?.message || 'Unknown API error';
-          throw new Error(`API Error (${error.response.status}): ${message}`);
+          const { status, data, config } = error.response;
+          paygridError.status = status;
+          paygridError.data = data;
+          paygridError.config = {
+            url: config.url,
+            method: config.method,
+            headers: config.headers,
+            data: config.data
+          };
+          
+          // Format the error message
+          const errorData = data as { message?: string; errors?: Record<string, string> };
+          if (errorData.errors) {
+            // Handle validation errors
+            const validationErrors = Object.entries(errorData.errors)
+              .map(([field, message]) => `${field}: ${message}`)
+              .join(', ');
+            paygridError.message = `Validation errors: ${validationErrors}`;
+          } else {
+            paygridError.message = errorData?.message || 'Unknown API error';
+          }
+        } else if (error.code === 'ECONNABORTED') {
+          paygridError.message = 'API request timeout';
+          paygridError.status = 408;
+        } else {
+          paygridError.message = error.message;
+          paygridError.status = 500;
         }
-        if (error.code === 'ECONNABORTED') {
-          throw new Error('API request timeout');
-        }
-        throw error;
+
+        throw paygridError;
       }
     );
   }
@@ -59,17 +89,22 @@ export class PaymentIntentClient {
   async initiatePaymentIntent(
     paymentIntent: PaymentIntent
   ): Promise<PaymentIntentResponse> {
+
+    // Format the payment intent for submission
+    const paymentIntentRequest = this.formatPaymentIntentForSubmission(paymentIntent);
+
     try {
       const { data } = await this.axios.post(
         PAYGRID_API.ENDPOINTS.PAYMENTS,
-        paymentIntent
+        paymentIntentRequest
       );
+
       return data;
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Payment intent initiation failed: ${error.message}`);
+      if (error instanceof AxiosError) {
+        throw new Error(`Payment intent initiation failed: ${this.formatErrorResponse(error as PaygridAPIError)}`);
       }
-      throw new Error('An unexpected error occurred during payment intent initiation');
+      throw new Error(`An unexpected error occurred during payment intent initiation: ${this.formatErrorResponse(error as PaygridAPIError)}`);
     }
   }
 
@@ -80,29 +115,31 @@ export class PaymentIntentClient {
    */
   private formatPaymentIntentForSubmission(paymentIntent: PaymentIntent): any {
     return {
-      payment_type: paymentIntent.payment_type.toLowerCase(),
-      routing_priority: paymentIntent.routing_priority,
+      payment_type: ['one-time', 'recurring'].includes(paymentIntent.payment_type?.toLowerCase()) ? 
+        (paymentIntent.payment_type?.toLowerCase() === 'one-time' ? PaymentType.ONE_TIME : PaymentType.RECURRING) : 
+        PaymentType.ONE_TIME, // Default to OneTime for invalid values
+      routing_priority: paymentIntent.routing_priority || RoutingPriority.AUTO,
       operator_data: {
         id: paymentIntent.operator_data.id,
-        operator: paymentIntent.operator_data.operator,
-        treasury: paymentIntent.operator_data.treasury,
+        operator: ethers.utils.getAddress(paymentIntent.operator_data.operator),
+        treasury: ethers.utils.getAddress(paymentIntent.operator_data.treasury),
         fee_bps: Number(paymentIntent.operator_data.fee_bps),
-        authorized_delegates: paymentIntent.operator_data.authorized_delegates,
-        webhook_url: paymentIntent.operator_data.webhook_url
+        authorized_delegates: paymentIntent.operator_data.authorized_delegates?.map(delegate => ethers.utils.getAddress(delegate)) || [],
+        webhook_url: paymentIntent.operator_data.webhook_url || ''
       },
       amount: Number(paymentIntent.amount),
       source: {
-        from_account: paymentIntent.source.from_account,
-        network_id: paymentIntent.source.network_id,
-        payment_token: paymentIntent.source.payment_token
+        from_account: ethers.utils.getAddress(paymentIntent.source.from_account),
+        network_id: paymentIntent.source.network_id.toUpperCase() as NetworkKey,
+        payment_token: paymentIntent.source.payment_token.toUpperCase() as TokenSymbol
       },
       destination: {
-        to_account: paymentIntent.destination.to_account,
-        network_id: paymentIntent.destination.network_id,
-        payment_token: paymentIntent.destination.payment_token
+        to_account: ethers.utils.getAddress(paymentIntent.destination.to_account),
+        network_id: paymentIntent.destination.network_id.toUpperCase() as NetworkKey,
+        payment_token: paymentIntent.destination.payment_token.toUpperCase() as TokenSymbol
       },
-      processing_date: Number(paymentIntent.processing_date),
-      expiration_date: Number(paymentIntent.expiration_date),
+      processing_date: Number(paymentIntent.processing_date) || Number(Math.floor(Date.now() / 1000) + 18000), // 5 hour buffer only if no date provided
+      expiration_date: Number(paymentIntent.expiration_date) || Number(Math.floor(Date.now() / 1000) + 3600), // 1 hour from now
       authorizations: {
         permit2_permit: {
           signature: paymentIntent.authorizations.permit2_permit.signature,
@@ -148,7 +185,6 @@ export class PaymentIntentClient {
         paymentIntent as PaymentIntent,
         signer
       );
-
       // Combine payment intent with signatures, preserving any existing initial_permit
       const signedPaymentIntent: PaymentIntent = {
         ...paymentIntent,
@@ -161,15 +197,15 @@ export class PaymentIntentClient {
       };
 
       // Format and submit the signed payment intent
-      const paymentIntentRequest = this.formatPaymentIntentForSubmission(signedPaymentIntent);
-      return await this.initiatePaymentIntent(paymentIntentRequest);
+      return await this.initiatePaymentIntent(signedPaymentIntent);
 
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('signing')) {
+        if (error.message.includes('permit2')) {
           throw new Error(`Payment intent signing failed: ${error.message}`);
         }
-        throw new Error(`Payment submission failed: ${error.message}`);
+        // Pass through formatted API errors
+        throw error;
       }
       throw new Error('An unexpected error occurred during payment signing and submission');
     }
@@ -188,11 +224,8 @@ export class PaymentIntentClient {
       );
       return data;
     } catch (error) {
-      if (error instanceof AxiosError && error.response?.status === 404) {
-        throw new Error(`Payment intent not found: ${paymentIntentId}`);
-      }
-      if (error instanceof Error) {
-        throw new Error(`Payment API Error: Failed to retrieve payment intent: ${error.message}`);
+      if (error instanceof AxiosError) {
+        throw new Error(`Failed to retrieve payment intent: ${this.formatErrorResponse(error as PaygridAPIError)}`);
       }
       throw new Error('An unexpected error occurred while retrieving payment intent');
     }
@@ -303,6 +336,29 @@ export class PaymentIntentClient {
     }
 
     return details.join(' | ');
+  }
+
+  /**
+   * Formats API error response into a detailed error message
+   */
+  private formatErrorResponse(error: PaygridAPIError): string {
+    const details = [];
+    
+    details.push(`Status: ${error.status}`);
+    details.push(`Message: ${error.message}`);
+    
+    if (error.data) {
+      details.push(`Response Data: ${JSON.stringify(error.data, null, 2)}`);
+    }
+    
+    if (error.config) {
+      details.push(`Request Details:
+        URL PATH: ${error.config.url}
+        METHOD: ${error.config.method}
+        PAYLOAD: ${JSON.stringify(error.config.data, null, 2)}`);
+    }
+    
+    return details.join('\n');
   }
 
   /**

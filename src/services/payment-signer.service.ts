@@ -113,7 +113,9 @@ export class PaymentIntentSigner {
     // Construct witness data matching the smart contract structure
     const witnessData: Witness = {
     witness: {
-        payment_type: paymentIntent.payment_type === PaymentType.ONE_TIME ? GridPaymentType.ONE_TIME : GridPaymentType.RECURRING,
+      payment_type: ['one-time', 'recurring'].includes(paymentIntent.payment_type?.toLowerCase()) ? 
+      (paymentIntent.payment_type?.toLowerCase() === 'one-time' ? GridPaymentType.ONE_TIME : GridPaymentType.RECURRING) : 
+      GridPaymentType.ONE_TIME, // Default to OneTime for invalid values
         operator_data: {
             operatorId: paymentIntent.operator_data.id || ethers.utils.id(paymentIntent.operator_data.operator),
             operator: ethers.utils.getAddress(paymentIntent.operator_data.operator),
@@ -131,8 +133,8 @@ export class PaymentIntentSigner {
             network_id: BigInt(destinationNetwork.chainId),
             payment_token: ethers.utils.getAddress(destinationTokenConfig.address)
         },
-        processing_date: paymentIntent.processing_date || BigInt(Math.floor(Date.now() / 1000) + 18000), // 5 hour buffer only if no date provided
-        expires_at: paymentIntent.expiration_date || BigInt(Math.floor(Date.now() / 1000) + 3600), // 1 hour from now
+        processing_date: BigInt(paymentIntent.processing_date || (Math.floor(Date.now() / 1000) + 18000)), // 5 hour buffer only if no date provided
+        expires_at: BigInt(paymentIntent.expiration_date || (Math.floor(Date.now() / 1000) + 3600)), // 1 hour from now
     },
     witnessTypeName: "PaymentIntent",
     witnessType: {
@@ -158,13 +160,6 @@ export class PaymentIntentSigner {
         ]
     }
     };
-
-    // console.log("======= Permit2 Signature Payload =======>", 
-    //     permitBatchTransferFrom,
-    //     PERMIT2_CONFIG.ADDRESS,
-    //     sourceNetwork.chainId,
-    //     witnessData
-    // );
 
     // Generate permit data using Uniswap SDK
     const permitData = SignatureTransfer.getPermitData(
