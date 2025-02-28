@@ -14,7 +14,9 @@ import {
 import { ConfigUtils } from '../utils/config';
 import { PERMIT2_CONFIG, FEE_CONFIG } from '../core/constants/config';
 import { isSignTypedDataSupported } from '../utils/eip712-support';
-
+import { PermitService } from './permit.service';
+import { TOKEN_CONFIGS } from '../core/constants/tokens';
+import { PermitSignatureParams, PermitSignaturePayload } from '../core/types/permit';
 export class PaymentIntentSigner {
  /**
    * Signs a payment intent using Permit2
@@ -180,5 +182,104 @@ export class PaymentIntentSigner {
       types: permitData.types,
       values: permitData.values
     };
+  }
+
+//--------------------------------------------------------------------------------------//
+//                              EIP-2612 Permit Generation                              //
+//--------------------------------------------------------------------------------------//
+
+  /**
+   * Generate a permit signature for token approvals
+   * This allows gasless approvals by signing typed data off-chain
+   */
+  static async generateTokenPermit(
+    tokenSymbol: TokenSymbol,
+    network: NetworkKey,
+    owner: `0x${string}`,
+    value: bigint,
+    deadline: number,
+    signer: ethers.Signer
+  ): Promise<Authorization["initial_permit"]> {
+    // Check if token supports permit
+    if (!PermitService.isPermitSupported(tokenSymbol, network)) {
+      throw new Error(`Token ${tokenSymbol} does not support permit on ${network}`);
+    }
+    
+    // Get token address
+    const tokenConfig = TOKEN_CONFIGS[tokenSymbol];
+    const tokenAddress = tokenConfig.address[network] as `0x${string}`;
+    
+    if (!tokenAddress) {
+      throw new Error(`Token ${tokenSymbol} not found on ${network}`);
+    }
+    
+    // Prepare permit parameters
+    const params: PermitSignatureParams = {
+      token: tokenAddress,
+      owner,
+      spender: PERMIT2_CONFIG.ADDRESS,
+      deadline,
+      // Default to infinite approval if no value provided
+      value: value || BigInt(ethers.constants.MaxUint256.toString())
+    };
+    
+    // Generate and sign permit
+    const permitData = await PermitService.generateAndSignPermit(
+      tokenSymbol,
+      network,
+      params,
+      signer
+    );
+    
+    // Return in format needed for authorization
+    return {
+      signature: permitData.signature,
+      nonce: permitData.nonce,
+      deadline: permitData.deadline
+    };
+  }
+
+  /**
+   * Get the EIP-712 permit payload for a token without signing it
+   * Useful for debugging or when you need to inspect the payload before signing manually
+   */
+  static async getTokenPermitPayload(
+    tokenSymbol: TokenSymbol,
+    network: NetworkKey,
+    owner: `0x${string}`,
+    value: bigint,
+    deadline: number,
+    provider: ethers.providers.Provider
+  ): Promise<PermitSignaturePayload> {
+    // Check if token supports permit
+    if (!PermitService.isPermitSupported(tokenSymbol, network)) {
+      throw new Error(`Token ${tokenSymbol} does not support permit on ${network}`);
+    }
+    
+    // Get token address
+    const tokenConfig = TOKEN_CONFIGS[tokenSymbol];
+    const tokenAddress = tokenConfig.address[network] as `0x${string}`;
+    
+    if (!tokenAddress) {
+      throw new Error(`Token ${tokenSymbol} not found on ${network}`);
+    }
+    
+    // Prepare permit parameters
+    const params: PermitSignatureParams = {
+      token: tokenAddress,
+      owner,
+      spender: PERMIT2_CONFIG.ADDRESS,
+      deadline,
+      // Default to infinite approval if no value provided
+      value: value || BigInt(ethers.constants.MaxUint256.toString())
+    };
+    
+    // Get permit payload without signing
+    return await PermitService.getPermitPayload(
+      tokenSymbol,
+      network,
+      params,
+      provider
+    );
   }
 } 
