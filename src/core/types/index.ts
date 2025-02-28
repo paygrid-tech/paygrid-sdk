@@ -1,20 +1,13 @@
 import { SUPPORTED_NETWORKS } from '../constants/networks';
 import { SUPPORTED_TOKENS } from '../constants/tokens';
 import { TypedDataDomain, TypedDataField } from 'ethers';
+import { PermitType } from './permit';
 
 export type NetworkKey = keyof typeof SUPPORTED_NETWORKS;
 export type TokenSymbol = keyof typeof SUPPORTED_TOKENS;
 
 // Define final payment states
 export const FINAL_PAYMENT_STATES = ['COMPLETED', 'FAILED', 'CANCELLED'] as const;
-
-export type PermitType = 
-  | 'EIP2612'
-  | 'DAI'
-  | 'USDC_ETHEREUM'
-  | 'USDC_OPTIMISM'
-  | 'REGULAR'
-  | 'SKIP';
 
 export interface NetworkConfig {
   chainId: number;
@@ -181,6 +174,7 @@ export interface PaymentIntentResponse {
   createdAt: string; // ISO datetime
   updatedAt: string; // ISO datetime
 }
+
 
 export type EIP712Domain = TypedDataDomain;
 export type EIP712Types = Record<string, TypedDataField[]>;

@@ -1,5 +1,6 @@
 import { PaymentIntentClient } from './services/payment.service';
 import { PaymentIntentSigner } from './services/payment-signer.service';
+import { PermitService } from './services/permit.service';
 import { ConfigUtils } from './utils/config';
 import { isSignTypedDataSupported } from './utils/eip712-support';
 import { PaymentIntent, Authorization, PaymentIntentResponse, PaymentType, ChargeBearer, RoutingPriority, OperatorData } from './core/types';
@@ -13,6 +14,7 @@ export {
     Authorization, 
     PaymentIntentResponse,
     PaymentIntentSigner,
+    PermitService,
     PaymentType,
     OperatorData,
     ChargeBearer,
