@@ -24,7 +24,7 @@ npm install @paygrid-network/sdk
 1. Configure environment variables:
 See [.env.example](./.env.example) for more details.
 
-2. Initialize SDK:
+2. Initialize SDK (Optional):
 ```typescript
 import { Paygrid } from '@paygrid-network/sdk';
 
@@ -50,6 +50,43 @@ npm run demo # Run both quickstart examples
 See [quickstart examples](./quickstart/) for complete implementation:
 - [Payment Intent Authorization Signer](./quickstart/sign-payment-intent.ts)
 - [Payment Client](./quickstart/payment-client.ts)
+
+## Gasless Token Permit Approval
+
+Paygrid SDK provides utilities for generating and signing EIP-2612 permit signatures, allowing gasless token approvals before submitting a payment intent:
+
+```typescript
+import { ethers } from 'ethers';
+import { PaymentIntentSigner } from '@paygrid-network/sdk';
+
+// 1. Get the EIP-712 permit payload (for inspection or manual signing)
+const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
+  'USDC',                                                  // Token symbol
+  'ETHEREUM',                                              // Network
+  '0xPayerWalletAddress',                                   // Owner address
+  BigInt(ethers.constants.MaxUint256.toString()),          // Value (infinite approval)
+  Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
+  provider                                                 // ethers provider (payer's wallet)
+);
+// permitPayload contains: { domain, types, values } for EIP-712 signing
+
+// 2. Generate and sign a permit in one step
+const signedPermit = await PaymentIntentSigner.generateTokenPermit(
+  'USDC',                                                  // Token symbol
+  'ETHEREUM',                                              // Network
+  '0xPayerWalletAddress',                                   // Owner address
+  BigInt(ethers.constants.MaxUint256.toString()),          // Value (default infinite approval)
+  Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
+  signer                                                   // ethers signer (payer's wallet)
+);
+// signedPermit contains: { signature, nonce, deadline }
+
+// 3. Use the signed permit in a payment intent
+paymentIntent.authorizations.initial_permit = signedPermit;
+
+```
+
+**Note: The permit is signed with the payer's wallet, so the payer must have approved the spender (Permit2 contract) to spend the token. This can be done once per token per network per payer wallet to save on gas otherwise the payment amount will be used as the value for the permit.**
 
 ## Core Concepts
 
@@ -89,6 +126,12 @@ signPaymentIntent(intent: PaymentIntent, signer: Signer): Promise<Authorization>
 
 // Construct payment intent EIP-712 payload for manual signing
 constructPaymentAuthorizationPayload(intent: PaymentIntent): { domain: EIP712Domain; types: EIP712Types; values: EIP712Values }
+
+// Generate token permit payload for inspection or custom signing
+getTokenPermitPayload(tokenSymbol, network, owner, spender, deadline, provider): { domain, types, values }
+
+// Generate and sign a token permit in one step
+generateTokenPermit(tokenSymbol, network, owner, spender, deadline, signer): { signature, nonce, deadline }
 ```
 
 ### Configuration
