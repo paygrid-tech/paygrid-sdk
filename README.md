@@ -59,7 +59,7 @@ Paygrid SDK provides utilities for generating and signing EIP-2612 permit signat
 import { ethers } from 'ethers';
 import { PaymentIntentSigner } from '@paygrid-network/sdk';
 
-// 1. Get the EIP-712 permit payload (for inspection or manual signing)
+// Option 1: Get the EIP-712 permit payload (for inspection or manual signing)
 const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
   'USDC',                                                  // Token symbol
   'ETHEREUM',                                              // Network
@@ -70,7 +70,7 @@ const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
 );
 // permitPayload contains: { domain, types, values } for EIP-712 signing
 
-// 2. Generate and sign a permit in one step
+// Option 2: Generate and sign a permit in one step
 const signedPermit = await PaymentIntentSigner.generateTokenPermit(
   'USDC',                                                  // Token symbol
   'ETHEREUM',                                              // Network
