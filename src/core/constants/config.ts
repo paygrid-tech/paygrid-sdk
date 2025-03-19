@@ -22,7 +22,7 @@ export const GRID_GATEWAY_PROXY: Record<string, string> = {
 
 // Fee Configuration (in basis points)
 export const FEE_CONFIG = {
-  GATEWAY_FEE_BPS: BigInt(10), // 0.1% (10 bps)
+  GATEWAY_FEE_BPS: BigInt(10), // 0.01% (10 bps)
   BPS_DENOMINATOR: BigInt(10000),
   MAX_FEE_BPS: BigInt(1000), // 10% maximum fee
 } as const;
@@ -38,8 +38,8 @@ export const PERMIT2_CONFIG = {
 export const SDK_CONFIG = {
   VERSION: '0.1.0',
   DEFAULT_TIMEOUT: 180000, // 3 minutes
-  POLL_INTERVAL: 2000, // 2 seconds
-  MAX_RETRIES: 600, // 30 minutes (2 second intervals)
+  POLL_INTERVAL: 2000, // 2 seconds (for polling)
+  MAX_RETRIES: 600, // 30 minutes (2 second intervals) 
   ENVIRONMENTS: {
     MAINNET: 'mainnet',
     TESTNET: 'testnet',

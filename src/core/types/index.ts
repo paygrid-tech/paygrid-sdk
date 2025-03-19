@@ -121,6 +121,7 @@ export interface BlockchainMetadata {
 }
 
 export interface ProcessingFees {
+  quoteId?: string;
   corridor_fees?: string; // Format: "0.00"
   charge_bearer: ChargeBearer;
 }

@@ -7,6 +7,12 @@ export const SUPPORTED_TOKENS = {
   DAI: 'DAI',
 } as const;
 
+export enum Tokens {
+  USDC = 'USDC',
+  USDT = 'USDT',
+  DAI = 'DAI'
+}
+
 export const TOKEN_CONFIGS: Record<keyof typeof SUPPORTED_TOKENS, TokenConfig> = {
   USDC: {
     symbol: 'USDC',

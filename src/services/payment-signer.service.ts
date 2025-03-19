@@ -9,7 +9,8 @@ import {
   EIP712Domain,
   EIP712Values,
   PaymentType,
-  GridPaymentType
+  GridPaymentType,
+  ChargeBearer
 } from '../core/types';
 import { ConfigUtils } from '../utils/config';
 import { PERMIT2_CONFIG, FEE_CONFIG } from '../core/constants/config';
@@ -17,7 +18,10 @@ import { isSignTypedDataSupported } from '../utils/eip712-support';
 import { PermitService } from './permit.service';
 import { TOKEN_CONFIGS } from '../core/constants/tokens';
 import { PermitSignatureParams, PermitSignaturePayload } from '../core/types/permit';
+import { CorridorQuotesService } from './corridor-quotes.service';
+
 export class PaymentIntentSigner {
+
  /**
    * Signs a payment intent using Permit2
    * Uses constructPaymentAuthorizationPayload to prepare the data
@@ -33,7 +37,7 @@ export class PaymentIntentSigner {
   ): Promise<Authorization> {
     try {
       // Get the payload for signing
-      const { domain, types, values } = this.constructPaymentAuthorizationPayload(paymentIntent);
+      const { domain, types, values } = await this.constructPaymentAuthorizationPayload(paymentIntent);
 
       // Sign the permit data
       const signature = await isSignTypedDataSupported(signer)._signTypedData(domain, types, values);
@@ -61,9 +65,9 @@ export class PaymentIntentSigner {
    * @param paymentIntent - The complete payment intent object
    * @returns Object containing domain, types and values ready for EIP-712 signing
    */
-  static constructPaymentAuthorizationPayload(
+  static async constructPaymentAuthorizationPayload(
     paymentIntent: PaymentIntent
-  ): { domain: EIP712Domain; types: EIP712Types; values: EIP712Values } {
+  ): Promise<{ domain: EIP712Domain; types: EIP712Types; values: EIP712Values }> {
     // Get network and token configurations
     const sourceNetworkKey = paymentIntent.source.network_id as NetworkKey;
     const sourceTokenSymbol = paymentIntent.source.payment_token as TokenSymbol;
@@ -75,11 +79,8 @@ export class PaymentIntentSigner {
     const destinationNetwork = ConfigUtils.getNetworkConfig(destinationNetworkKey);
     const destinationTokenConfig = ConfigUtils.getTokenConfig(destinationTokenSymbol, destinationNetworkKey);
 
-    // Convert amount from cents to token decimals
-    const amount = ConfigUtils.convertAmountToDecimals(
-        paymentIntent.amount,
-        sourceTokenConfig.decimals
-    );
+    // Get adjusted amount that includes corridor fees if applicable
+    const amount = await this.adjustAmountWithCorridorFees(paymentIntent);
 
     const gridGatewayProxy = sourceNetwork.gridGatewayProxy;
 
@@ -281,5 +282,84 @@ export class PaymentIntentSigner {
       params,
       provider
     );
+  }
+
+//--------------------------------------------------------------------------------------//
+//                              Corridor Fees Calculation                                //
+//--------------------------------------------------------------------------------------//
+
+
+  /**
+   * Adjusts payment amount to include corridor fees if applicable
+   * 
+   * @param paymentIntent - The payment intent object
+   * @returns The adjusted amount in token decimals
+   */
+  private static async adjustAmountWithCorridorFees(
+    paymentIntent: PaymentIntent
+  ): Promise<bigint> {
+    // Get token configuration for decimals
+    const sourceNetworkKey = paymentIntent.source.network_id as NetworkKey;
+    const sourceTokenSymbol = paymentIntent.source.payment_token as TokenSymbol;
+    const sourceTokenConfig = ConfigUtils.getTokenConfig(sourceTokenSymbol, sourceNetworkKey);
+    
+    // Convert original amount from cents to token decimals
+    const originalAmountInCents = paymentIntent.amount;
+    const originalAmountInDecimals = originalAmountInCents / 100;
+    
+    // Check if we need to include corridor fees
+    const quoteId = paymentIntent.processing_fees?.quoteId;
+    const chargeBearer = paymentIntent.processing_fees?.charge_bearer;
+    
+    // Only adjust amount if quoteId exists and charge bearer is PAYER
+    if (quoteId && chargeBearer === ChargeBearer.PAYER) {
+      try {
+        console.log(`Quote ID provided: ${quoteId}. Fetching effective quote to adjust amount for corridor fees.`);
+        
+        // Create corridor quotes service
+        const corridorService = new CorridorQuotesService();
+        
+        // Get effective quote with destination account
+        const effectiveQuote = await corridorService.getEffectiveQuote(
+          quoteId,
+          paymentIntent.destination.to_account
+        );
+        
+        if (!effectiveQuote || !effectiveQuote.corridor_quotes[0].estimated_total_fees) {
+          throw new Error(`Effective quote not found or missing corridor fee for ID: ${quoteId}`);
+        }
+        
+        // Calculate the total amount including corridor fees (amount + fees)
+        const feesInDecimals = effectiveQuote.corridor_quotes[0].estimated_total_fees;
+        const totalAmount = originalAmountInDecimals + feesInDecimals;
+        
+        console.log(`Adjusting payment amount to include corridor fees:`, {
+          originalAmount: `${originalAmountInCents} cents`,
+          corridorFees: `${feesInDecimals}`,
+          totalAmount: `${totalAmount}`
+        });
+        // Convert total amount from decimals to token decimals
+        return BigInt(
+          Math.floor(
+            totalAmount * Math.pow(10, sourceTokenConfig.decimals)
+          )
+        );
+      } catch (error) {
+        console.error(`Failed to adjust amount for corridor fees: ${error instanceof Error ? error.message : String(error)}. Using original amount.`);
+        
+        // Fallback to original amount if quote retrieval fails
+        return ConfigUtils.convertAmountToDecimals(
+          originalAmountInCents,
+          sourceTokenConfig.decimals
+        );
+      }
+    } else {
+      // No quoteId provided or charge bearer is not PAYER, use original amount
+      console.log('No quote ID provided or charge bearer is not PAYER. Using original amount.');
+      return ConfigUtils.convertAmountToDecimals(
+        originalAmountInCents,
+        sourceTokenConfig.decimals
+      );
+    }
   }
 } 

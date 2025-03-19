@@ -78,7 +78,7 @@ async function main() {
     console.log(JSON.stringify(paymentIntent, bigIntReplacer, 2));
 
     // Get the payment intent authorization payload
-    const payload = paygrid.constructPaymentAuthorizationPayload(paymentIntent);
+    const payload = await paygrid.constructPaymentAuthorizationPayload(paymentIntent);
     
     console.log('\n2. Generated Payload:');
     console.log(JSON.stringify({
