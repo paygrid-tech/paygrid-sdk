@@ -44,8 +44,8 @@ describe('PaymentIntentSigningService', () => {
   };
 
   describe('constructPaymentAuthorizationPayload', () => {
-    it('should construct a valid EIP-712 payload', () => {
-      const payload = PaymentIntentSigner.constructPaymentAuthorizationPayload(mockPaymentIntent);
+    it('should construct a valid EIP-712 payload', async () => {
+      const payload = await PaymentIntentSigner.constructPaymentAuthorizationPayload(mockPaymentIntent);
 
       // Verify payload structure
       expect(payload).to.have.all.keys(['domain', 'types', 'values']);
@@ -114,7 +114,7 @@ describe('PaymentIntentSigningService', () => {
       const paymentIntent: PaymentIntent = mockPaymentIntent;
 
       // Step 2: (Optional) Construct the payload separately if needed
-      const payload = PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent);
+      const payload = await PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent);
       console.log('Constructed Payload:', {
         domain: payload.domain,
         types: payload.types,

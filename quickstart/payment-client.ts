@@ -6,6 +6,8 @@ import {
   PaymentIntent, 
   PaymentType, 
   RoutingPriority,
+  Networks,
+  Tokens
 } from '@paygrid-network/sdk';
 import dotenv from 'dotenv';
   
@@ -15,8 +17,7 @@ async function main() {
   try {
     // Initialize SDK configuration - Optional
     // const sdkConfig: SDKConfig = {
-    //   apiKey: process.env.PAYGRID_API_KEY,
-    //   environment: 'MAINNET'
+    //   apiKey: process.env.PAYGRID_API_KEY
     // };
 
     // Initialize payment service
@@ -37,35 +38,36 @@ async function main() {
       payment_type: PaymentType.ONE_TIME,
       routing_priority: RoutingPriority.COST,
       operator_data: {
-        id: ethers.utils.id('0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4'),
-        operator: '0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4',
-        treasury: '0x0AB796b0Db4333EF2fFaC835a1e05C75E0c119D4',
+        id: ethers.utils.id('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'),
+        operator: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
         authorized_delegates: [
-          '0xF34c65196F4fC4E3dE7133eec7C13859e741875C'
+          '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'
         ],
-        fee_bps: 10, // 0.3% fee
-        webhook_url: 'https://example.com/webhook'
+        fee_bps: 0, // 0.3% fee
       },
       amount: 100, // $1.00 in cents
       source: {
         from_account: signer.address,
-        network_id: 'POLYGON',
-        payment_token: 'USDC'
+        network_id: Networks.POLYGON,
+        payment_token: Tokens.USDC
       },
       destination: {
-        to_account: '0xF34c65196F4fC4E3dE7133eec7C13859e741875C',
-        network_id: 'BASE',
-        payment_token: 'USDC'
+        to_account: '0x12dc3A010C7d01b50e70997970C5180d17dc79C8',
+        network_id: Networks.BASE,
+        payment_token: Tokens.USDC
       },
       processing_fees: {
         // Payer pays for the corridor fees
         charge_bearer: ChargeBearer.PAYER,
+        // Include the quoteId from the corridor quote response
+        quoteId: 'c344fc42-18e5-4399-8c3b-8808c8b48955',
         // corridor fees are automatically calculated by the Paygrid SDK
       },
       payment_reference: '017e0e752d7dc551cc3bb605a2e25f8162d0cc6c2f905706deea543336f1409be5',
       metadata: {
-        key: 'true',
-        key2: 'false'
+        key: 'FOO',
+        key2: 'BAR'
       },
       authorizations: {
         permit2_permit: {
@@ -94,6 +96,8 @@ async function main() {
       source: `${paymentIntent.source.network_id}/${paymentIntent.source.payment_token}`,
       destination: `${paymentIntent.destination.network_id}/${paymentIntent.destination.payment_token}`,
       processing_date: paymentIntentResponse.processing_date,
+      charge_bearer: paymentIntent.processing_fees?.charge_bearer || 'No charge bearer provided',
+      quoteId: paymentIntent.processing_fees?.quoteId || 'No quoteId provided'
     });
 
     console.log('\n2. Fetching Payment Intent by ID:');

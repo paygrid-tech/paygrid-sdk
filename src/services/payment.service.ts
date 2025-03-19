@@ -28,11 +28,11 @@ export class PaymentIntentClient {
 
   constructor(config: SDKConfig = {}) {
     const apiConfig = ConfigUtils.getApiConfig(config);
-    console.log('apiConfig', apiConfig);
+    // console.log('apiConfig', apiConfig);
     // Initialize axios instance with base configuration
     this.axios = axios.create({
       baseURL: `${apiConfig.baseUrl}/${apiConfig.version}`,
-      timeout: 30000, // 30 seconds
+      timeout: apiConfig.timeout || SDK_CONFIG.DEFAULT_TIMEOUT, // 3 minutes
       headers: {
         'Content-Type': 'application/json',
         ...(config.apiKey && { 'X-API-KEY': config.apiKey })
@@ -125,7 +125,7 @@ export class PaymentIntentClient {
         treasury: ethers.utils.getAddress(paymentIntent.operator_data.treasury),
         fee_bps: Number(paymentIntent.operator_data.fee_bps),
         authorized_delegates: paymentIntent.operator_data.authorized_delegates?.map(delegate => ethers.utils.getAddress(delegate)) || [],
-        webhook_url: paymentIntent.operator_data.webhook_url || ''
+        ...(paymentIntent.operator_data.webhook_url && { webhook_url: paymentIntent.operator_data.webhook_url })
       },
       amount: Number(paymentIntent.amount),
       source: {
@@ -155,11 +155,12 @@ export class PaymentIntentClient {
         })
       },
       processing_fees: paymentIntent.processing_fees && {
-        corridor_fees: paymentIntent.processing_fees.corridor_fees,
-        charge_bearer: paymentIntent.processing_fees.charge_bearer
+        ...(paymentIntent.processing_fees.quoteId && { quoteId: paymentIntent.processing_fees.quoteId }),
+        ...(paymentIntent.processing_fees.corridor_fees && { corridor_fees: paymentIntent.processing_fees.corridor_fees }),
+        ...(paymentIntent.processing_fees.charge_bearer && { charge_bearer: paymentIntent.processing_fees.charge_bearer })
       },
-      payment_reference: paymentIntent.payment_reference,
-      metadata: paymentIntent.metadata || null
+      payment_reference: paymentIntent.payment_reference || null,
+      metadata: paymentIntent.metadata || {}
     };
   }
 
