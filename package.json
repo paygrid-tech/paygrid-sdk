@@ -1,6 +1,6 @@
 {
   "name": "@paygrid-network/sdk",
-  "version": "0.1.0-beta.7",
+  "version": "0.1.0-beta.9",
   "description": "Official Paygrid Network TypeScript/JavaScript SDK - Chain-Agnostic Payment Clearing Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,6 +31,7 @@
     "prepare": "npm run build",
     "pg:sign-payment-intent": "ts-node quickstart/sign-payment-intent.ts",
     "pg:payment-client": "ts-node quickstart/payment-client.ts",
+    "pg:corridor-quotes": "ts-node quickstart/corridor-quotes.ts",
     "demo": "npm run pg:sign-payment-intent && echo '\n=================\n' && npm run pg:payment-client",
     "demo:watch": "nodemon --exec 'npm run demo'"
   },

@@ -8,6 +8,7 @@ Paygrid Network is a chain-abstracted, application-specific clearing layer desig
 
 - Chain-abstracted payment processing
 - Cross-chain payment routing, matching, and settlement
+- Payment corridor routes pricing with estimated fees and execution times
 - Supports EIP-2612 gasless permit approvals
 - Supports gasless transactions
 - Real-time payment status tracking
@@ -43,12 +44,14 @@ const status = await paygrid.pollPaymentIntentStatus(payment.id);
 4. Run the quickstart examples:
 ```bash
 npm run pg:sign-payment-intent # Sign a payment intent without submitting
+npm run pg:get-corridor-quotes # Get corridor quotes for a payment intent
 npm run pg:payment-client # Sign and submit a payment intent, then poll its status
 npm run demo # Run both quickstart examples
 ```
 
 See [quickstart examples](./quickstart/) for complete implementation:
 - [Payment Intent Authorization Signer](./quickstart/sign-payment-intent.ts)
+- [Corridor Quotes](./quickstart/corridor-quotes.ts)
 - [Payment Client](./quickstart/payment-client.ts)
 
 ## Gasless Token Permit Approval
@@ -109,6 +112,9 @@ Paygrid provides a secure multi-level authorization mechanism for token approval
 
 ### Main Methods
 ```typescript
+// Get payment corridor routes with estimated fees and execution times
+getPaymentCorridorRoutes(request: CorridorQuoteRequest): Promise<CorridorQuoteResponse>
+
 // Initiate payment intent
 initiatePaymentIntent(intent: PaymentIntent): Promise<PaymentResponse>
 
@@ -125,21 +131,57 @@ pollPaymentIntentStatus(paymentIntentId: string, options?: PollOptions): Promise
 signPaymentIntent(intent: PaymentIntent, signer: Signer): Promise<Authorization>
 
 // Construct payment intent EIP-712 payload for manual signing
-constructPaymentAuthorizationPayload(intent: PaymentIntent): { domain: EIP712Domain; types: EIP712Types; values: EIP712Values }
+constructPaymentAuthorizationPayload(intent: PaymentIntent): Promise<{ domain: EIP712Domain; types: EIP712Types; values: EIP712Values }>
 
 // Generate token permit payload for inspection or custom signing
-getTokenPermitPayload(tokenSymbol, network, owner, spender, deadline, provider): { domain, types, values }
+getTokenPermitPayload(tokenSymbol, network, owner, value, deadline, provider): { domain: EIP712Domain, types: EIP712Types, values: EIP712Values }
 
 // Generate and sign a token permit in one step
-generateTokenPermit(tokenSymbol, network, owner, spender, deadline, signer): { signature, nonce, deadline }
+generateTokenPermit(tokenSymbol, network, owner, value, deadline, signer): { signature: string, nonce: number, deadline: number }
 ```
 
 ### Configuration
 ```typescript
 interface SDKConfig {
-  environment?: 'testnet' | 'mainnet';
   apiKey?: string;
 }
+```
+
+### Corridor Routes Quotes
+
+Get corridor routes quotes to estimate fees and execution times before initiating a payment intent:
+
+```typescript
+// Request parameters for corridor route quotes
+interface CorridorQuoteRequest {
+  amount: number;                      // Amount to transfer in token units (required)
+  source_account: string;              // source account address (required)
+  destination_account: string;        // destination account address (required)
+  sources: NetworkTokens;             // source networks and tokens (optional if not specified will default to all supported networks and tokens)
+  destinations: NetworkTokens;        // destination networks and tokens (required)
+  routing_priority: RoutingPriority;  // routing priority (optional but recommended)
+  payment_reference: string;          // payment reference (optional)
+}
+
+// Example usage
+const request: CorridorQuoteRequest = {
+  amount: 10,                          // 10 USDC
+  source_account: "0xYourSourceAddress",
+  destination_account: "0xDestinationAddress",
+  sources: {
+    networks: [Networks.BASE],
+    tokens: [Tokens.USDC]
+  },
+  destinations: {
+    networks: [Networks.POLYGON, Networks.OPTIMISM],
+    tokens: [Tokens.USDC, Tokens.USDT]
+  },
+  routing_priority: RoutingPriority.COST
+};
+
+const corridorQuotes = await paygrid.getPaymentCorridorRoutes(request);
+// Get the quoteId from the list of corridor quotes to use in the payment intent object
+const quoteId = corridorQuotes.corridor_quotes[0].quoteId;
 ```
 
 ### Resources

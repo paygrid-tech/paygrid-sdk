@@ -13,21 +13,42 @@ const NONCE_ABI = [
     name: 'nonces',
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
-    type: 'function',
-  }
-];
+      type: 'function',
+    },
+    {
+      inputs: [{ name: 'user', type: 'address' }],
+      name: 'getNonce',
+      outputs: [{ name: '', type: 'uint256' }],
+      stateMutability: 'view',
+      type: 'function',
+    }
+  ];
 
 /**
  * Get token nonce for a specific owner
+ * For DAI on Polygon, the function is getNonce() instead of nonces()
  */
 export async function getTokenNonce(
   provider: ethers.providers.Provider,
   tokenAddress: string,
   ownerAddress: string
 ): Promise<bigint> {
+
   const contract = new ethers.Contract(tokenAddress, NONCE_ABI, provider);
-  const nonce = await contract.nonces(ownerAddress);
-  return BigInt(nonce.toString());
+
+  try {
+    // Try nonces() first
+    const nonce = await contract.nonces(ownerAddress);
+    return BigInt(nonce.toString());
+  } catch (error) {
+    try {
+      // Fallback to getNonce() if nonces() fails
+      const nonce = await contract.getNonce(ownerAddress);
+      return BigInt(nonce.toString());
+    } catch (error) {
+      throw new Error(`Failed to get nonce: Neither nonces() nor getNonce() methods available for token ${tokenAddress}`);
+    }
+  }
 }
 
 /**
