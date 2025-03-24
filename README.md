@@ -64,8 +64,8 @@ import { PaymentIntentSigner } from '@paygrid-network/sdk';
 
 // Option 1: Get the EIP-712 permit payload (for inspection or manual signing)
 const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
-  'USDC',                                                  // Token symbol
-  'ETHEREUM',                                              // Network
+  Tokens.USDC,                                                  // Token symbol
+  Networks.BASE,                                              // Network
   '0xPayerWalletAddress',                                   // Owner address
   BigInt(ethers.constants.MaxUint256.toString()),          // Value (infinite approval)
   Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
@@ -75,12 +75,12 @@ const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
 
 // Option 2: Generate and sign a permit in one step
 const signedPermit = await PaymentIntentSigner.generateTokenPermit(
-  'USDC',                                                  // Token symbol
-  'ETHEREUM',                                              // Network
+  Tokens.USDC,                                                  // Token symbol
+  Networks.ARBITRUM,                                              // Network
   '0xPayerWalletAddress',                                   // Owner address
   BigInt(ethers.constants.MaxUint256.toString()),          // Value (default infinite approval)
   Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
-  signer                                                   // ethers signer (payer's wallet)
+  signer                                                   // ethers signer attached to an RPC provider (payer's wallet)
 );
 // signedPermit contains: { signature, nonce, deadline }
 

@@ -58,7 +58,8 @@ export class PermitService {
   private static async generateDAIPayload(
     params: PermitSignatureParams,
     provider: ethers.providers.Provider,
-    chainId: number
+    chainId: number,
+    network: NetworkKey
   ): Promise<PermitSignaturePayload> {
     const { token, owner, spender = GLOBAL_SPENDER, deadline } = params;
     
@@ -70,6 +71,34 @@ export class PermitService {
       ? params.nonce 
       : await getTokenNonce(provider, token, owner);
     
+    // For Polygon DAI, we need to include the salt parameter
+    if (network === 'POLYGON') {
+      // Generate chain-specific salt
+      // Polygon DAI uses chain ID as salt
+      const salt = ethers.utils.hexZeroPad(
+        ethers.BigNumber.from(chainId).toHexString(),
+        32
+      );
+
+      return {
+        domain: {
+          name,
+          version: '1',
+          verifyingContract: token,
+          salt // Add the salt parameter instead of chainId
+        },
+        types: DAI_PERMIT_TYPES,
+        values: {
+          holder: owner,
+          spender,
+          nonce,
+          expiry: deadline,
+          allowed: true
+        }
+      };
+    }
+    
+    // For other networks, use the standard approach with chainId
     return {
       domain: {
         name,
@@ -116,7 +145,7 @@ export class PermitService {
       case 'EIP2612':
         return this.generateEIP2612Payload(params, provider, chainId);
       case 'DAI':
-        return this.generateDAIPayload(params, provider, chainId);
+        return this.generateDAIPayload(params, provider, chainId, network_key);
       default:
         throw new Error(`Unsupported permit type for ${token_symbol} on ${network_key}`);
     }
