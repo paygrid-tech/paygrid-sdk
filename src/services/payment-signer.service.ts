@@ -197,9 +197,9 @@ export class PaymentIntentSigner {
     tokenSymbol: TokenSymbol,
     network: NetworkKey,
     owner: `0x${string}`,
-    value: bigint,
     deadline: number,
-    signer: ethers.Signer
+    signer: ethers.Signer,
+    value?: bigint
   ): Promise<Authorization["initial_permit"]> {
     // Check if token supports permit
     if (!PermitService.isPermitSupported(tokenSymbol, network)) {
@@ -221,7 +221,7 @@ export class PaymentIntentSigner {
       spender: PERMIT2_CONFIG.ADDRESS,
       deadline,
       // Default to infinite approval if no value provided
-      value: value || BigInt(ethers.constants.MaxUint256.toString())
+      value: value ? BigInt(value) : BigInt(ethers.constants.MaxUint256.toString())
     };
     
     // Generate and sign permit
@@ -248,9 +248,9 @@ export class PaymentIntentSigner {
     tokenSymbol: TokenSymbol,
     network: NetworkKey,
     owner: `0x${string}`,
-    value: bigint,
     deadline: number,
-    provider: ethers.providers.Provider
+    provider: ethers.providers.Provider,
+    value?: bigint
   ): Promise<PermitSignaturePayload> {
     // Check if token supports permit
     if (!PermitService.isPermitSupported(tokenSymbol, network)) {
@@ -272,7 +272,7 @@ export class PaymentIntentSigner {
       spender: PERMIT2_CONFIG.ADDRESS,
       deadline,
       // Default to infinite approval if no value provided
-      value: value || BigInt(ethers.constants.MaxUint256.toString())
+      value: value ? BigInt(value) : BigInt(ethers.constants.MaxUint256.toString())
     };
     
     // Get permit payload without signing
