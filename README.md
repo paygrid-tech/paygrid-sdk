@@ -64,12 +64,12 @@ import { PaymentIntentSigner } from '@paygrid-network/sdk';
 
 // Option 1: Get the EIP-712 permit payload (for inspection or manual signing)
 const permitPayload = await PaymentIntentSigner.getTokenPermitPayload(
-  Tokens.USDC,                                                  // Token symbol
-  Networks.BASE,                                              // Network
-  '0xPayerWalletAddress',                                   // Owner address
-  BigInt(ethers.constants.MaxUint256.toString()),          // Value (infinite approval)
-  Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
-  provider                                                 // ethers provider (payer's wallet)
+  Tokens.USDC,                                             // Token symbol
+  Networks.BASE,                                           // Network
+  '0xPayerWalletAddress',                                  // Owner address
+  Math.floor(Date.now() / 1000) + 3600,                   // Deadline (1 hour)
+  provider,                                               // ethers provider (payer's wallet)
+  ethers.constants.MaxUint256.toString()                  // Value (infinite approval)
 );
 // permitPayload contains: { domain, types, values } for EIP-712 signing
 
@@ -78,9 +78,9 @@ const signedPermit = await PaymentIntentSigner.generateTokenPermit(
   Tokens.USDC,                                                  // Token symbol
   Networks.ARBITRUM,                                              // Network
   '0xPayerWalletAddress',                                   // Owner address
-  BigInt(ethers.constants.MaxUint256.toString()),          // Value (default infinite approval)
   Math.floor(Date.now() / 1000) + 3600,                    // Deadline (1 hour)
-  signer                                                   // ethers signer attached to an RPC provider (payer's wallet)
+  signer,                                                   // ethers signer attached to an RPC provider (payer's wallet)
+  ethers.constants.MaxUint256.toString()                  // Value (infinite approval)
 );
 // signedPermit contains: { signature, nonce, deadline }
 
@@ -134,10 +134,10 @@ signPaymentIntent(intent: PaymentIntent, signer: Signer): Promise<Authorization>
 constructPaymentAuthorizationPayload(intent: PaymentIntent): Promise<{ domain: EIP712Domain; types: EIP712Types; values: EIP712Values }>
 
 // Generate token permit payload for inspection or custom signing
-getTokenPermitPayload(tokenSymbol, network, owner, value, deadline, provider): { domain: EIP712Domain, types: EIP712Types, values: EIP712Values }
+getTokenPermitPayload(tokenSymbol, network, owner, deadline, provider, value?: bigint): { domain: EIP712Domain, types: EIP712Types, values: EIP712Values }
 
 // Generate and sign a token permit in one step
-generateTokenPermit(tokenSymbol, network, owner, value, deadline, signer): { signature: string, nonce: number, deadline: number }
+generateTokenPermit(tokenSymbol, network, owner, deadline, signer, value?: bigint): { signature: string, nonce: number, deadline: number }
 ```
 
 ### Configuration
