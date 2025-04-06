@@ -47,8 +47,10 @@ export * from './core/types/corridor';
 export class Paygrid {
   private readonly paymentIntentClient: PaymentIntentClient;
   private readonly corridorQuotesService: CorridorQuotesService;
+  private readonly config: SDKConfig;
   
   constructor(config: SDKConfig = {}) {
+    this.config = config;
     this.paymentIntentClient = new PaymentIntentClient(config);
     this.corridorQuotesService = new CorridorQuotesService(config);
   }
@@ -62,7 +64,7 @@ export class Paygrid {
    * Signs and submits a payment intent
    */
   async signAndInitiatePaymentIntent(paymentIntent: PaymentIntent, signer: ethers.Signer): Promise<PaymentIntentResponse> {
-    return this.paymentIntentClient.signAndInitiatePaymentIntent(paymentIntent, signer);
+    return this.paymentIntentClient.signAndInitiatePaymentIntent(paymentIntent, signer, this.config);
   }
 
   /**
@@ -93,7 +95,7 @@ export class Paygrid {
     paymentIntent: PaymentIntent,
     signer: ethers.Signer
   ): Promise<Authorization> {
-    return PaymentIntentSigner.signPaymentIntent(paymentIntent, signer);
+    return PaymentIntentSigner.signPaymentIntent(paymentIntent, signer, this.config);
   }
 
   /**
@@ -102,7 +104,7 @@ export class Paygrid {
   async constructPaymentAuthorizationPayload(
     paymentIntent: PaymentIntent
   ): Promise<{ domain: EIP712Domain; types: EIP712Types; values: EIP712Values }> {
-    return PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent);
+    return PaymentIntentSigner.constructPaymentAuthorizationPayload(paymentIntent, this.config);
   }
 
   /**

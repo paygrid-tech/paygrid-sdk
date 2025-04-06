@@ -19,6 +19,7 @@ import { PermitService } from './permit.service';
 import { TOKEN_CONFIGS } from '../core/constants/tokens';
 import { PermitSignatureParams, PermitSignaturePayload } from '../core/types/permit';
 import { CorridorQuotesService } from './corridor-quotes.service';
+import { SDKConfig } from '../core/types/config';
 
 export class PaymentIntentSigner {
 
@@ -34,10 +35,11 @@ export class PaymentIntentSigner {
  static async signPaymentIntent(
     paymentIntent: PaymentIntent,
     signer: ethers.Signer,
+    config?: SDKConfig
   ): Promise<Authorization> {
     try {
       // Get the payload for signing
-      const { domain, types, values } = await this.constructPaymentAuthorizationPayload(paymentIntent);
+      const { domain, types, values } = await this.constructPaymentAuthorizationPayload(paymentIntent, config);
 
       // Sign the permit data
       const signature = await isSignTypedDataSupported(signer)._signTypedData(domain, types, values);
@@ -66,7 +68,8 @@ export class PaymentIntentSigner {
    * @returns Object containing domain, types and values ready for EIP-712 signing
    */
   static async constructPaymentAuthorizationPayload(
-    paymentIntent: PaymentIntent
+    paymentIntent: PaymentIntent,
+    config?: SDKConfig
   ): Promise<{ domain: EIP712Domain; types: EIP712Types; values: EIP712Values }> {
     // Get network and token configurations
     const sourceNetworkKey = paymentIntent.source.network_id as NetworkKey;
@@ -80,7 +83,7 @@ export class PaymentIntentSigner {
     const destinationTokenConfig = ConfigUtils.getTokenConfig(destinationTokenSymbol, destinationNetworkKey);
 
     // Get adjusted amount that includes corridor fees if applicable
-    const amount = await this.adjustAmountWithCorridorFees(paymentIntent);
+    const amount = await this.adjustAmountWithCorridorFees(paymentIntent, config);
 
     const gridGatewayProxy = sourceNetwork.gridGatewayProxy;
 
@@ -296,7 +299,8 @@ export class PaymentIntentSigner {
    * @returns The adjusted amount in token decimals
    */
   private static async adjustAmountWithCorridorFees(
-    paymentIntent: PaymentIntent
+    paymentIntent: PaymentIntent,
+    config?: SDKConfig
   ): Promise<bigint> {
     // Get token configuration for decimals
     const sourceNetworkKey = paymentIntent.source.network_id as NetworkKey;
@@ -316,8 +320,8 @@ export class PaymentIntentSigner {
       try {
         console.log(`Quote ID provided: ${quoteId}. Fetching effective quote to adjust amount for corridor fees.`);
         
-        // Create corridor quotes service
-        const corridorService = new CorridorQuotesService();
+        // Create corridor quotes service with config
+        const corridorService = new CorridorQuotesService(config);
         
         // Get effective quote with destination account
         const effectiveQuote = await corridorService.getEffectiveQuote(
