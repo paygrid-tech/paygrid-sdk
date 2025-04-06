@@ -178,13 +178,15 @@ export class PaymentIntentClient {
     paymentIntent: Omit<PaymentIntent, 'authorizations'> & {
       authorizations?: Partial<Authorization>
     },
-    signer: ethers.Signer
+    signer: ethers.Signer,
+    config?: SDKConfig
   ): Promise<PaymentIntentResponse> {
     try {
       // Generate permit2 authorization signatures
       const permit2Authorization = await PaymentIntentSigner.signPaymentIntent(
         paymentIntent as PaymentIntent,
-        signer
+        signer,
+        config
       );
       // Combine payment intent with signatures, preserving any existing initial_permit
       const signedPaymentIntent: PaymentIntent = {
