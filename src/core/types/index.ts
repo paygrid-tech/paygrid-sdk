@@ -108,6 +108,7 @@ export interface Authorization {
 
 export interface BlockchainTransaction {
   src_tx_hash: string | null;
+  relay_tx_hash: string | null;
   dst_tx_hash: string | null;
   error: string | null;
   effectiveGasPrice: string | null;

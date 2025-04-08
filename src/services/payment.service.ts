@@ -325,6 +325,7 @@ export class PaymentIntentClient {
     if (paymentIntent.blockchain_metadata?.transaction) {
       const tx = paymentIntent.blockchain_metadata.transaction;
       if (tx.src_tx_hash) details.push(`Source TX: ${tx.src_tx_hash}`);
+      if (tx.relay_tx_hash) details.push(`Relay TX: ${tx.relay_tx_hash}`);
       if (tx.dst_tx_hash) details.push(`Destination TX: ${tx.dst_tx_hash}`);
       if (tx.error) details.push(`Error: ${tx.error}`);
       if (tx.gasAmountUSD) details.push(`Gas Cost: $${tx.gasAmountUSD}`);

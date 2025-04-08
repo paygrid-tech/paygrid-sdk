@@ -75,7 +75,7 @@ export async function getTokenNameAndVersion(
     name = await nameContract.name();
   } catch (e) {
     name = "Unknown Token";
-    console.log(`⚠️ Could not get token name: ${e}`);
+    console.log(`⚠️ Could not get token name`);
   }
   
   let version: string;
@@ -84,7 +84,7 @@ export async function getTokenNameAndVersion(
     version = await versionContract.version();
   } catch (e) {
     version = "1";
-    console.log(`⚠️ Could not get token version: ${e}`);
+    console.log(`⚠️ Could not get token version`);
   }
 
   return { name, version };

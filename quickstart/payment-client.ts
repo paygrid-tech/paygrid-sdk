@@ -139,6 +139,7 @@ async function main() {
             if (currentState.blockchain_metadata?.transaction) {
               const tx = currentState.blockchain_metadata.transaction;
               if (tx.src_tx_hash) console.log(`Source TX: ${tx.src_tx_hash}`);
+              if (tx.relay_tx_hash) console.log(`Relay TX: ${tx.relay_tx_hash}`);
               if (tx.dst_tx_hash) console.log(`Destination TX: ${tx.dst_tx_hash}`);
               if (tx.error) console.log(`Error: ${tx.error}`);
             }
