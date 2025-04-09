@@ -119,6 +119,12 @@ export interface BlockchainTransaction {
 export interface BlockchainMetadata {
   payment_gateway_proxy: string;
   transaction?: BlockchainTransaction;
+  refund?: {
+    status: string | null;
+    txHash: string | null;
+    amount: string | null;
+    error: string | null;
+  };
 }
 
 export interface ProcessingFees {
